@@ -6,3 +6,9 @@
 - https://github.com/google/cel-spec/
 - https://github.com/google/cel-policy-templates-go
 - https://codelabs.developers.google.com/codelabs/cel-go
+
+## Commands
+
+```console
+go test -count=1 -bench=. -benchmem
+```
