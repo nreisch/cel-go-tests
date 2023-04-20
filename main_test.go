@@ -89,7 +89,7 @@ func BenchmarkTest_Policy100_Evaluate(b *testing.B) {
     }
 }
 
-func BenchmarkTest_Policy1_Array1_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy1_Array1_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
     jsonInputStr := `
     {
@@ -106,12 +106,13 @@ func BenchmarkTest_Policy1_Array1_CompileEvaluate(b *testing.B) {
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
 
     policyCount := 1
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
-func BenchmarkTest_Policy100_Array1_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy100_Array1_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
     jsonInputStr := `
     {
@@ -128,12 +129,13 @@ func BenchmarkTest_Policy100_Array1_CompileEvaluate(b *testing.B) {
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
 
     policyCount := 100
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
-func BenchmarkTest_Policy100_Array10_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy100_Array10_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
     jsonInputStr := `
     {
@@ -150,12 +152,13 @@ func BenchmarkTest_Policy100_Array10_CompileEvaluate(b *testing.B) {
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
 
     policyCount := 100
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
-func BenchmarkTest_Policy100_Array100_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy100_Array100_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
 
     jsonInputStr := `
@@ -172,13 +175,14 @@ func BenchmarkTest_Policy100_Array100_CompileEvaluate(b *testing.B) {
     // rego: input.review.type == input.parameters.type && input.review.array[_] != ""
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
     policyCount := 100
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
 
-func BenchmarkTest_Policy1000_Array1_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy1000_Array1_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
     jsonInputStr := `
     {
@@ -195,12 +199,13 @@ func BenchmarkTest_Policy1000_Array1_CompileEvaluate(b *testing.B) {
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
 
     policyCount := 1000
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
-func BenchmarkTest_Policy1000_Array10_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy1000_Array10_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
     jsonInputStr := `
     {
@@ -217,12 +222,13 @@ func BenchmarkTest_Policy1000_Array10_CompileEvaluate(b *testing.B) {
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
 
     policyCount := 1000
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
-func BenchmarkTest_Policy1000_Array100_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy1000_Array100_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
 
     jsonInputStr := `
@@ -239,12 +245,13 @@ func BenchmarkTest_Policy1000_Array100_CompileEvaluate(b *testing.B) {
     // rego: input.review.type == input.parameters.type && input.review.array[_] != ""
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
     policyCount := 1000
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }
 
-func BenchmarkTest_Policy1000_Array1000_CompileEvaluate(b *testing.B) {
+func BenchmarkTest_Policy1000_Array1000_Evaluate(b *testing.B) {
     env, _ := setupGlobalEnv()
 
     jsonInputStr := `
@@ -261,7 +268,8 @@ func BenchmarkTest_Policy1000_Array1000_CompileEvaluate(b *testing.B) {
     // rego: input.review.type == input.parameters.type && input.review.array[_] != ""
     exp := "input.type == 'Microsoft.Compute/virtualMachines' && input.properties.array.all(x, x != '')"
     policyCount := 1000
+    checkedAsts,_ := compile(env, exp, policyCount)
     for i := 0; i < b.N; i++ {
-        compile_and_evaluate(env, exp, jsonInputStr, policyCount)
+        evaluate(env, checkedAsts, jsonInputStr)
     }
 }

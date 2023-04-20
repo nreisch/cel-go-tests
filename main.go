@@ -49,9 +49,8 @@ func basic_policy() {
     /*
        Parse the expression (policy rule) to AST and check the expression for correctness
     */
-    //exp1 := "properties.mode == 'standard1'";
-    exp2 := "properties.contains('mode','standard1')"
-    ast, iss := env.Parse(exp2)
+    exp := "properties.contains('mode','standard1')"
+    ast, iss := env.Parse(exp)
     if iss.Err() != nil {
         glog.Exit(iss.Err())
     }
@@ -72,21 +71,20 @@ func basic_policy() {
     /*
        Evaluate the program and its expression compiled to AST against the input
     */
-    program, err := env.Program(ast)
+    program, err := env.Program(checkedAst)
     if err != nil {
         glog.Exitf("program error: %v", err)
     }
 
     input := make(map[string]any)
     jsonStr := `
-        {
-            "location" : "eastus",
-            "properties": {
-                "mode" : "standard"
-            }
-        }`
+    {
+        "location" : "eastus",
+        "properties": {
+            "mode" : "standard"
+        }
+    }`
     json.Unmarshal([]byte(jsonStr), &input)
-    fmt.Println("Input: ", input)
 
     ctx, cancel := context.WithCancel(context.Background())
     completed := make(chan bool)
