@@ -6,33 +6,30 @@ import (
 	"fmt"
 	"os"
 	"reflect"
-	"sort"
 	"time"
 
 	"github.com/golang/glog"
 	"github.com/google/cel-go/cel"
 	"github.com/google/cel-go/checker/decls"
-	"github.com/google/cel-go/common/types"
-	"github.com/google/cel-go/common/types/ref"
-	"github.com/google/cel-go/common/types/traits"
 )
 
-func basic_policy_test() {
+func basic_policy() {
     /*
-        - Configure the compiler/evaluation environment
-        - Declare custom variables and functions that are used in the expression (aka policy rule)
-        - Dyn represents a dynamic type. This kind only exists at type-check time?
-        - Variable declarations only needed for type checking to ensure correctness/semantics of expression.
-            Type checking helps improve safety/performance for evaluation though difficult to do for dynamic json
-            where type inferencing is minimal.
-        - Function declarations required for expression evaluation.
+       - Configure the compiler/evaluation environment
+       - Declare custom variables and functions that are used in the expression (aka policy rule)
+       - Dyn represents a dynamic type. This kind only exists at type-check time?
+       - Variable declarations only needed for type checking to ensure correctness/semantics of expression.
+           Type checking helps improve safety/performance for evaluation though difficult to do for dynamic json
+           where type inferencing is minimal.
+       - Function declarations required for expression evaluation.
+       - Variables are essentially like how we treat aliases we load them into the compiler?
     */
     mapAB := cel.MapType(cel.TypeParamType("A"), cel.TypeParamType("B"))
     env, err := cel.NewEnv(
         cel.Declarations(decls.NewIdent("properties", decls.NewMapType(decls.String, decls.Dyn), nil)),
         // Declare custom functions and implementation. Function useful for overloading, can also equivalently create a new Declarations and then pass FunctionBinding.
         cel.Function("contains",
-             // For non-member funcs can use Overload
+            // For non-member funcs can use Overload
             cel.MemberOverload(
                 // Id
                 "map_contains_key_value",
@@ -50,22 +47,21 @@ func basic_policy_test() {
     }
 
     /*
-        Parse the expression (policy rule) to AST and check the expression for correctness
+       Parse the expression (policy rule) to AST and check the expression for correctness
     */
     //exp1 := "properties.mode == 'standard1'";
-    exp2 := "properties.contains('mode','standard1')";
+    exp2 := "properties.contains('mode','standard1')"
     ast, iss := env.Parse(exp2)
     if iss.Err() != nil {
         glog.Exit(iss.Err())
     }
     /*
-        Can't type check arbitrary json expression unless declaring the type for the expression.
-        ERROR: <input>:1:1: undeclared reference to 'properties' (in container '')
+       Can't type check arbitrary json expression unless declaring the type for the expression.
+       ERROR: <input>:1:1: undeclared reference to 'properties' (in container '')
     */
     checkedAst, iss := env.Check(ast)
     // Report semantic errors, if present.
     if iss.Err() != nil {
-
         glog.Exit(iss.Err())
     }
     // Check what the expression result type / output is evaluating
@@ -74,14 +70,14 @@ func basic_policy_test() {
     }
 
     /*
-        Evaluate the program and its expression compiled to AST against the input
+       Evaluate the program and its expression compiled to AST against the input
     */
     program, err := env.Program(ast)
     if err != nil {
         glog.Exitf("program error: %v", err)
     }
 
-    input := make(map[string]any);
+    input := make(map[string]any)
     jsonStr := `
         {
             "location" : "eastus",
@@ -94,7 +90,7 @@ func basic_policy_test() {
 
     ctx, cancel := context.WithCancel(context.Background())
     completed := make(chan bool)
-    defer func() {completed <- true}();
+    defer func() { completed <- true }()
     go func() {
         // After 50ms cancel the request unless the func has been quit when the program succeeds...
         time.Sleep(50 * time.Millisecond)
@@ -106,7 +102,7 @@ func basic_policy_test() {
             default:
                 cancel()
                 fmt.Println("Request canceled")
-                os.Exit(1);
+                os.Exit(1)
             }
         }
     }()
@@ -117,61 +113,55 @@ func basic_policy_test() {
     report(out, det, err)
 }
 
+func compile_and_evaluate(env *cel.Env, expression string, jsonInputStr string, policyCount int) {
+    checkedAsts, _ := compile(env, expression, policyCount)
+    evaluate(env, checkedAsts, jsonInputStr)
+}
 
-// Taken from here -> https://github.com/google/cel-go/blob/master/codelab/codelab.go#L196
-func report(result ref.Val, details *cel.EvalDetails, err error) {
-    fmt.Println("------ result ------")
-    if err != nil {
-        fmt.Printf("error: %s\n", err)
-    } else {
-        fmt.Printf("value: %v (%T)\n", result, result)
+func compile(env *cel.Env, expression string, policyCount int) ([]*cel.Ast, error) {
+    checkedAsts := []*cel.Ast{}
+    for i := 0; i < policyCount; i++ {
+        ast, iss := env.Parse(expression)
+        if iss.Err() != nil {
+            glog.Exit(iss.Err())
+        }
+        checkedAst, iss := env.Check(ast)
+        if iss.Err() != nil {
+            glog.Exit(iss.Err())
+        }
+        if !reflect.DeepEqual(checkedAst.OutputType(), cel.BoolType) {
+            glog.Exitf("Got %v, wanted %v output type", checkedAst.OutputType(), cel.BoolType)
+        }
+        checkedAsts = append(checkedAsts, checkedAst)
     }
-    if details != nil {
-        fmt.Printf("\n------ eval states ------\n")
-        state := details.State()
-        stateIDs := state.IDs()
-        ids := make([]int, len(stateIDs), len(stateIDs))
-        for i, id := range stateIDs {
-            ids[i] = int(id)
+    return checkedAsts, nil
+}
+
+func evaluate(env *cel.Env, checkedAsts []*cel.Ast, jsonInputStr string) {
+    for i := 0; i < len(checkedAsts); i++ {
+        ast := checkedAsts[i]
+        program, err := env.Program(ast)
+        if err != nil {
+            glog.Exitf("program error: %v", err)
         }
-        sort.Ints(ids)
-        for _, id := range ids {
-            v, found := state.Value(int64(id))
-            if !found {
-                continue
-            }
-            fmt.Printf("%d: %v (%T)\n", id, v, v)
-        }
+        input := make(map[string]any)
+        json.Unmarshal([]byte(jsonInputStr), &input)
+        program.Eval(input)
     }
 }
 
-// Taken from here -> https://github.com/google/cel-go/blob/master/codelab/solution/codelab.go#L466
-func mapContainsKeyValue(args ...ref.Val) ref.Val {
-    // The declaration of the function ensures that only arguments which match
-    // the mapContainsKey signature will be provided to the function.
-    m := args[0].(traits.Mapper)
-    fmt.Println(m)
-  
-    // CEL has many interfaces for dealing with different type abstractions.
-    // The traits.Mapper interface unifies field presence testing on proto
-    // messages and maps.
-    key := args[1]
-    v, found := m.Find(key)
-  
-    // If not found and the value was non-nil, the value is an error per the
-    // `Find` contract. Propagate it accordingly. Such an error might occur with
-    // a map whose key-type is listed as 'dyn'.
-    if !found {
-      if v != nil {
-        return types.ValOrErr(v, "unsupported key type")
-      }
-      // Return CEL False if the key was not found.
-      return types.False
-    }
-    // Otherwise whether the value at the key equals the value provided.
-    return v.Equal(args[2])
-  }
+func oom() {
+    env, _ := cel.NewEnv(cel.Declarations(
+		decls.NewVar("x", decls.NewListType(decls.Int)),
+	))
+    // Potential for oom? If this increases exponentially...
+    exp := "['foo', 'bar'].map(x, [x+x,x+x]).map(x, [x+x,x+x]).map(x, [x+x,x+x]).map(x, [x+x,x+x])"
+	program, _ := env.Compile(exp)
+	prg, _ := env.Program(program)
+    out, det, e := prg.Eval(map[string]interface{}{})
+    report(out, det, e)
+}
 
 func main() {
-    basic_policy_test()
+    basic_policy()
 }
