@@ -24,7 +24,6 @@ BenchmarkTest_Policy1_Array1_CompileEvaluate-16|1|1|117215 ns/op|44185 B/op|906 
 BenchmarkTest_Policy100_Array1_CompileEvaluate-16|100|1|11662914 ns/op|4420092 B/op|90533 allocs/op
 BenchmarkTest_Policy100_Array10_CompileEvaluate-16|100|10|11771656 ns/op|4478050 B/op|91824 allocs/op
 BenchmarkTest_Policy100_Array100_CompileEvaluate-16|100|100|13330341 ns/op|5024987 B/op|110140 allocs/op
-<br>
 BenchmarkTest_Policy1000_Array1_CompileEvaluate-16|1000|1|114189911 ns/op|44104144 B/op|904917 allocs/op
 BenchmarkTest_Policy1000_Array10_CompileEvaluate-16|1000|10 |116303911 ns/op|44686122 B/op|917940 allocs/op
 BenchmarkTest_Policy1000_Array100_CompileEvaluate-16|1000|100|126396388 ns/op|50107981 B/op|1100936 allocs/op
